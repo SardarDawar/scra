@@ -1,58 +1,36 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-from docx import Document
-from docx.shared import Inches
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.keys import Keys
+import time
 
-def extract_content(url):
-    # Make a request to the webpage
-    response = requests.get(url)
+def search_amazon(product_name):
+    # Set up the webdriver
+    driver = webdriver.Chrome(executable_path=ChromeDriverManager().install())
 
-    # Parse the HTML content of the webpage with BeautifulSoup
-    soup = BeautifulSoup(response.content, 'html.parser')
+    # Navigate to Amazon
+    driver.get("https://www.amazon.com/")
 
-    # Find the footer element by its HTML tag or class
-    footer = soup.find('footer')
-    navbar = soup.find('nav', {'class': 'navbar'})
+    # Find the search box element and enter the product name
+    search_box = driver.find_element_by_id("twotabsearchtextbox")
+    search_box.send_keys(product_name)
+    search_box.send_keys(Keys.RETURN)
 
-    # Remove the footer element and all its contents from the parsed HTML
-    if footer:
-        footer.decompose()
+    # Wait for the page to load
+    time.sleep(5)
 
-    if navbar:
-        navbar.decompose()
+    # Your additional code to work with search results
 
-    # Extract the remaining content of the webpage
-    content = soup.get_text()
+    # Close the browser
+    driver.close()
 
-    # Remove blank lines
-    lines = [line for line in content.splitlines() if line.strip()]
+    # Return a message for now, replace this with your search result handling code
+    return "Search completed for " + product_name
 
-    # Join the remaining lines
-    text = '\n'.join(lines)
+# Streamlit app
+st.title("Amazon Product Search")
+product_name = st.text_input("Enter a product name to search on Amazon:", "")
 
-    title = soup.title.string
-
-    # Create a new Word document
-    document = Document()
-
-    # Add a title to the document
-    document.add_heading(f"{title}", 0)
-
-    # Add a paragraph to the document with the extracted content
-    document.add_paragraph(text)
-
-    # Save the document to a file
-    document.save('content.docx')
-
-    return title
-
-st.title("Webpage Content Extractor")
-url = st.text_input("Enter the URL of the webpage you want to extract content from:")
-
-if st.button("Extract Content"):
-    if url:
-        title = extract_content(url)
-        st.write(f"{title} content saved in content.docx file")
-    else:
-        st.write("Please enter a valid URL.")
+if st.button("Search"):
+    result = search_amazon(product_name)
+    st.write(result)
